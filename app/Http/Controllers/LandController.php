@@ -262,7 +262,7 @@ class LandController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'cadastral_code' => ['required', 'string', 'max:50'],
+            'cadastral_code' => ['nullable', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
             'price' => ['required', 'numeric', 'min:0'],
             'size_ha' => ['required', 'numeric', 'gt:0'],
@@ -275,7 +275,6 @@ class LandController extends Controller
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
         ], [
             'title.required' => 'Зарын гарчиг оруулна уу.',
-            'cadastral_code.required' => 'Нэгж талбарын дугаар (кадастр) оруулна уу.',
             'price.required' => 'Үнэ оруулна уу.',
             'size_ha.required' => 'Газрын хэмжээг оруулна уу.',
             'size_ha.gt' => 'Газрын хэмжээ 0-ээс их байх ёстой.',
@@ -297,7 +296,7 @@ class LandController extends Controller
             'user_id' => (string) (auth()->id() ?? 'guest'),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'cadastral_code' => $validated['cadastral_code'],
+            'cadastral_code' => $validated['cadastral_code'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'price' => $validated['price'],
             'size_ha' => $validated['size_ha'],

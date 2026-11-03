@@ -30,6 +30,68 @@
         </div>
     @endif
 
+    <!-- Нэгж талбарын дугаар (Кадастр) -->
+    <div class="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-200">
+        <label class="block font-bold text-emerald-900 mb-1">
+            Нэгж талбарын дугаар (Кадастр)
+            <span class="ml-1 text-[10px] font-bold text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5">заавал биш</span>
+        </label>
+        <div class="flex gap-2">
+            <input type="text" 
+                   name="cadastral_code"
+                   x-model="newParcelNo" 
+                   placeholder="Жишээ: 1680710776" 
+                   class="flex-1 bg-white border border-gray-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-500 font-mono font-bold text-gray-800 shadow-sm">
+            <button type="button" 
+                    @click="verifyParcel()" 
+                    :disabled="parcelChecking"
+                    :class="parcelChecking ? 'opacity-70 cursor-wait' : ''"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid" :class="parcelChecking ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"></i>
+                <span x-text="parcelChecking ? 'Шалгаж байна' : 'Шалгах'"></span>
+            </button>
+        </div>
+        <p class="mt-1.5 text-[10px] text-emerald-800/70 font-semibold">
+            Кадастрын дугааргүй газар байвал хоосон орхино уу. Дугаар оруулбал egazar.gov.mn-ээс шалгаж, талбай болон байршлыг автоматаар бөглөнө.
+        </p>
+
+        <template x-if="parcelMessage">
+            <p class="mt-2 flex items-start gap-1.5 font-semibold text-[11px]"
+               :class="parcelOk ? 'text-emerald-700' : 'text-red-600'">
+                <i class="fa-solid mt-0.5" :class="parcelOk ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
+                <span x-text="parcelMessage"></span>
+            </p>
+        </template>
+
+        <!-- egazar.gov.mn-ээс ирсэн нэгж талбарын мэдээлэл -->
+        <template x-if="parcelDetails">
+            <div class="mt-2 rounded-xl bg-white border border-emerald-200 p-2.5 text-[11px] text-gray-700 space-y-1.5 shadow-sm">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-emerald-800">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> egazar.gov.mn мэдээлэл
+                    </span>
+                    <a :href="parcelDetails.egazar_url" target="_blank" rel="noopener"
+                       class="font-bold text-emerald-700 hover:underline whitespace-nowrap">
+                        egazar.mn харах <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                    <p><span class="text-gray-500">Гэрчилгээ:</span>
+                        <span class="font-semibold" x-text="parcelDetails.property_no || '—'"></span></p>
+                    <p><span class="text-gray-500">Талбай:</span>
+                        <span class="font-semibold" x-text="parcelDetails.area_label || '—'"></span></p>
+                    <p class="col-span-2"><span class="text-gray-500">Хаяг:</span>
+                        <span class="font-semibold" x-text="parcelDetails.address_label || '—'"></span></p>
+                    <p class="col-span-2"><span class="text-gray-500">Зориулалт:</span>
+                        <span class="font-semibold" x-text="parcelDetails.landuse || '—'"></span></p>
+                </div>
+                <p x-show="parcelDetails.latitude" class="text-emerald-700 font-semibold">
+                    <i class="fa-solid fa-location-dot mr-1"></i> Байршил газрын зураг дээр автоматаар тэмдэглэгдлээ.
+                </p>
+            </div>
+        </template>
+    </div>
+
     <!-- Зарын шаблон (Ашиглах) -->
     <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
         <label class="block font-bold text-gray-700">Зарын загвар ашиглах</label>
@@ -116,64 +178,6 @@
     <div>
         <label class="block font-bold text-gray-700 mb-1">Дэлгэрэнгүй мэдээлэл / Тайлбар</label>
         <textarea name="description" rows="8" x-model="newDescription" placeholder="Газрын байршил, орчны мэдээлэл, зам харгуй болон бусад нэмэлт мэдээллээ дэлгэрэнгүй бичнэ үү..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-emerald-500 font-semibold text-gray-800 resize-none">{{ old('description') }}</textarea>
-    </div>
-
-    <!-- Нэгж талбарын дугаар (Кадастр) -->
-    <div class="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-200">
-        <label class="block font-bold text-emerald-900 mb-1">
-            Нэгж талбарын дугаар (Кадастр) <span class="text-red-500">*</span>
-        </label>
-        <div class="flex gap-2">
-            <input type="text" 
-                   name="cadastral_code"
-                   x-model="newParcelNo" 
-                   placeholder="Жишээ: 1680710776" 
-                   class="flex-1 bg-white border border-gray-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-500 font-mono font-bold text-gray-800 shadow-sm" required>
-            <button type="button" 
-                    @click="verifyParcel()" 
-                    :disabled="parcelChecking"
-                    :class="parcelChecking ? 'opacity-70 cursor-wait' : ''"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                <i class="fa-solid" :class="parcelChecking ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"></i>
-                <span x-text="parcelChecking ? 'Шалгаж байна' : 'Шалгах'"></span>
-            </button>
-        </div>
-
-        <template x-if="parcelMessage">
-            <p class="mt-2 flex items-start gap-1.5 font-semibold text-[11px]"
-               :class="parcelOk ? 'text-emerald-700' : 'text-red-600'">
-                <i class="fa-solid mt-0.5" :class="parcelOk ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
-                <span x-text="parcelMessage"></span>
-            </p>
-        </template>
-
-        <!-- egazar.gov.mn-ээс ирсэн нэгж талбарын мэдээлэл -->
-        <template x-if="parcelDetails">
-            <div class="mt-2 rounded-xl bg-white border border-emerald-200 p-2.5 text-[11px] text-gray-700 space-y-1.5 shadow-sm">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-emerald-800">
-                        <i class="fa-solid fa-shield-halved mr-1"></i> egazar.gov.mn мэдээлэл
-                    </span>
-                    <a :href="parcelDetails.egazar_url" target="_blank" rel="noopener"
-                       class="font-bold text-emerald-700 hover:underline whitespace-nowrap">
-                        egazar.mn харах <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                    </a>
-                </div>
-                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
-                    <p><span class="text-gray-500">Гэрчилгээ:</span>
-                        <span class="font-semibold" x-text="parcelDetails.property_no || '—'"></span></p>
-                    <p><span class="text-gray-500">Талбай:</span>
-                        <span class="font-semibold" x-text="parcelDetails.area_label || '—'"></span></p>
-                    <p class="col-span-2"><span class="text-gray-500">Хаяг:</span>
-                        <span class="font-semibold" x-text="parcelDetails.address_label || '—'"></span></p>
-                    <p class="col-span-2"><span class="text-gray-500">Зориулалт:</span>
-                        <span class="font-semibold" x-text="parcelDetails.landuse || '—'"></span></p>
-                </div>
-                <p x-show="parcelDetails.latitude" class="text-emerald-700 font-semibold">
-                    <i class="fa-solid fa-location-dot mr-1"></i> Байршил газрын зураг дээр автоматаар тэмдэглэгдлээ.
-                </p>
-            </div>
-        </template>
     </div>
 
     <!-- Хэрэглэгч нэвтрээгүй бол утасны дугаар шаардах -->

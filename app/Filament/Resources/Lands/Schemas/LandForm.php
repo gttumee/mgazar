@@ -80,7 +80,7 @@ class LandForm
                                 TextInput::make('cadastral_code')
                                     ->label('Нэгж талбарын дугаар (Кадастр)')
                                     ->placeholder('Жишээ: 1680710776')
-                                    ->required(),
+                                    ->helperText('Кадастрын дугааргүй газар байвал хоосон орхино уу.'),
 
                                 TextInput::make('phone')
                                     ->label('Холбогдох утасны дугаар')
