@@ -131,8 +131,11 @@
                    class="flex-1 bg-white border border-gray-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-500 font-mono font-bold text-gray-800 shadow-sm" required>
             <button type="button" 
                     @click="verifyParcel()" 
+                    :disabled="parcelChecking"
+                    :class="parcelChecking ? 'opacity-70 cursor-wait' : ''"
                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
-                <i class="fa-solid fa-magnifying-glass"></i> Шалгах
+                <i class="fa-solid" :class="parcelChecking ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"></i>
+                <span x-text="parcelChecking ? 'Шалгаж байна' : 'Шалгах'"></span>
             </button>
         </div>
 
@@ -142,6 +145,34 @@
                 <i class="fa-solid mt-0.5" :class="parcelOk ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
                 <span x-text="parcelMessage"></span>
             </p>
+        </template>
+
+        <!-- egazar.gov.mn-ээс ирсэн нэгж талбарын мэдээлэл -->
+        <template x-if="parcelDetails">
+            <div class="mt-2 rounded-xl bg-white border border-emerald-200 p-2.5 text-[11px] text-gray-700 space-y-1.5 shadow-sm">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-emerald-800">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> egazar.gov.mn мэдээлэл
+                    </span>
+                    <a :href="parcelDetails.egazar_url" target="_blank" rel="noopener"
+                       class="font-bold text-emerald-700 hover:underline whitespace-nowrap">
+                        egazar.mn харах <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                    <p><span class="text-gray-500">Гэрчилгээ:</span>
+                        <span class="font-semibold" x-text="parcelDetails.property_no || '—'"></span></p>
+                    <p><span class="text-gray-500">Талбай:</span>
+                        <span class="font-semibold" x-text="parcelDetails.area_label || '—'"></span></p>
+                    <p class="col-span-2"><span class="text-gray-500">Хаяг:</span>
+                        <span class="font-semibold" x-text="parcelDetails.address_label || '—'"></span></p>
+                    <p class="col-span-2"><span class="text-gray-500">Зориулалт:</span>
+                        <span class="font-semibold" x-text="parcelDetails.landuse || '—'"></span></p>
+                </div>
+                <p x-show="parcelDetails.latitude" class="text-emerald-700 font-semibold">
+                    <i class="fa-solid fa-location-dot mr-1"></i> Байршил газрын зураг дээр автоматаар тэмдэглэгдлээ.
+                </p>
+            </div>
         </template>
     </div>
 
@@ -451,6 +482,20 @@
             if (lngInput) lngInput.value = lng.toFixed(6);
         }
 
+        // egazar шалгалтаас ирсэн байршлыг газрын зураг дээр тэмдэглэнэ
+        window.gazarSetCreateLocation = function (lat, lng) {
+            const latitude = Number(lat);
+            const longitude = Number(lng);
+
+            if (!isFinite(latitude) || !isFinite(longitude)) return;
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+
+            const target = L.latLng(latitude, longitude);
+            marker.setLatLng(target);
+            map.setView(target, Math.max(map.getZoom() || 15, 17));
+            updateInputs(latitude, longitude);
+        };
+
         map.on('click', function (e) {
             marker.setLatLng(e.latlng);
             updateInputs(e.latlng.lat, e.latlng.lng);
@@ -490,6 +535,13 @@
         });
 
         updateInputs(defaultLat, defaultLng);
+
+        // Шалгалт зураг ачаалагдахаас өмнө дууссан бол хүлээгдэж буй байршлыг хэрэглэнэ
+        if (Array.isArray(window.gazarPendingCreateLocation)) {
+            const [pendingLat, pendingLng] = window.gazarPendingCreateLocation;
+            window.gazarPendingCreateLocation = null;
+            window.gazarSetCreateLocation(pendingLat, pendingLng);
+        }
     }
 
     // DOMContentLoaded аль хэдийн болсон байсан ч ажиллана

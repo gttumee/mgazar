@@ -375,6 +375,8 @@
                 newIsSloped: @json(old('is_sloped') === '1'),
                 parcelMessage: '',
                 parcelOk: false,
+                parcelChecking: false,
+                parcelDetails: null,
                 placeholderImage: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
                     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">' +
                     '<rect width="400" height="400" fill="#e2e8f0"/>' +
@@ -472,6 +474,7 @@
                     this.$watch('newParcelNo', () => {
                         this.parcelMessage = '';
                         this.parcelOk = false;
+                        this.parcelDetails = null;
                     });
                 },
 
@@ -871,9 +874,11 @@
                     this.openDetailModal(land);
                 },
 
-                verifyParcel() {
+                async verifyParcel() {
                     const value = (this.newParcelNo || '').trim();
                     const digits = value.replace(/\D/g, '');
+
+                    this.parcelDetails = null;
 
                     if (!value) {
                         this.parcelOk = false;
@@ -887,8 +892,70 @@
                         return;
                     }
 
-                    this.parcelOk = true;
-                    this.parcelMessage = 'Дугаарын формат зөв байна. Зар нийтлэгдсэний дараа egazar.mn холбоосоор баталгаажна.';
+                    this.parcelChecking = true;
+                    this.parcelOk = false;
+                    this.parcelMessage = 'egazar.gov.mn-ээс шалгаж байна...';
+
+                    try {
+                        const response = await fetch('/check-parcel', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': this.csrfToken()
+                            },
+                            body: JSON.stringify({ parcel_no: digits })
+                        });
+
+                        if (!response.ok && response.status !== 422) {
+                            throw new Error('HTTP ' + response.status);
+                        }
+
+                        const data = await response.json();
+
+                        if (response.status === 422) {
+                            this.parcelOk = false;
+                            this.parcelMessage = data.message || 'Нэгж талбарын дугаараа зөв оруулна уу.';
+                            return;
+                        }
+
+                        if (data.found) {
+                            this.parcelOk = true;
+                            this.parcelDetails = data;
+                            this.parcelMessage = 'Нэгж талбар egazar.gov.mn-ээс баталгаажлаа.';
+
+                            if ((!this.newSizeHa || Number(this.newSizeHa) <= 0) && data.size_ha) {
+                                this.newSizeHa = String(data.size_ha);
+                            }
+
+                            this.applyParcelLocation(data.latitude, data.longitude);
+                        } else {
+                            this.parcelOk = false;
+                            this.parcelMessage = data.message
+                                || 'Энэ дугаартай нэгж талбар олдсонгүй. Дугаараа дахин шалгана уу.';
+                        }
+                    } catch (error) {
+                        this.parcelOk = false;
+                        this.parcelMessage = 'egazar.gov.mn-тэй холбогдож чадсангүй. Түр хүлээгээд дахин оролдоно уу.';
+                    } finally {
+                        this.parcelChecking = false;
+                    }
+                },
+
+                // egazar-аас ирсэн координатаар үүсгэх формын газрын зургийн тэмдэглэгээг зөөнө
+                applyParcelLocation(lat, lng) {
+                    const latitude = Number(lat);
+                    const longitude = Number(lng);
+
+                    if (!isFinite(latitude) || !isFinite(longitude) || (latitude === 0 && longitude === 0)) {
+                        return;
+                    }
+
+                    if (typeof window.gazarSetCreateLocation === 'function') {
+                        window.gazarSetCreateLocation(latitude, longitude);
+                    } else {
+                        window.gazarPendingCreateLocation = [latitude, longitude];
+                    }
                 },
 
                 openDetailModal(land) {
