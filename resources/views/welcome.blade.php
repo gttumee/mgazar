@@ -119,7 +119,7 @@
             <div class="flex items-center gap-3 shrink-0">
                 <div class="hidden lg:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-full border border-emerald-200 text-xs font-semibold">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>egazar.mn баталгаажсан: <strong x-text="verifiedCount">4</strong></span>
+                    <span>egazar.gov.mn баталгаажсан: <strong x-text="verifiedCount">4</strong></span>
                 </div>
 
                 <button 
@@ -231,7 +231,7 @@
                         class="px-3.5 py-1.5 rounded-full border font-semibold transition-all flex items-center gap-1.5 shadow-sm"
                     >
                         <i class="fa-solid fa-circle-check text-emerald-300"></i>
-                        <span>egazar.mn баталгаажсан</span>
+                        <span>egazar.gov.mn баталгаажсан</span>
                     </button>
 
                     <span class="text-gray-300 mx-1 hidden sm:inline">|</span>
